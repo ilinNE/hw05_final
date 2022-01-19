@@ -10,7 +10,7 @@ User = get_user_model()
 
 
 def index(request):
-    post_list = Post.objects.all()
+    post_list = Post.objects.select_related('group').all()
     context = {
         'page_obj': get_page_obj(post_list, request),
         'page': request.GET.get('page'),
@@ -32,8 +32,10 @@ def group_posts(request, slug):
 def profile(request, username):
     author = get_object_or_404(User, username=username)
     user = request.user if request.user.is_authenticated else None
-    following = True if Follow.objects.filter(user=user,
-                                              author=author) else False
+    following = True if Follow.objects.filter(
+        user=user,
+        author=author
+    ).exists() else False
     post_list = Post.objects.filter(author=author)
     context = {
         'author': author,
@@ -104,11 +106,12 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    author_list = list(map(
-        lambda follow: follow.author,
-        request.user.follower.all())
+    author_list = User.objects.filter(
+        following__in=request.user.follower.all()
     )
-    post_list = Post.objects.filter(author__in=author_list)
+    post_list = Post.objects.select_related('group').filter(
+        author__in=author_list
+    )
     context = {
         'page_obj': get_page_obj(post_list, request),
         'follow': True
@@ -120,9 +123,9 @@ def follow_index(request):
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
     user = request.user
-    if user == author or Follow.objects.filter(user=user, author=author):
+    if user == author:
         return redirect('posts:profile', username=username)
-    Follow.objects.create(
+    Follow.objects.get_or_create(
         user=user,
         author=author
     )

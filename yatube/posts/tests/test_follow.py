@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-from posts.models import Follow, Post
 
+from ..models import Follow, Post
 
 User = get_user_model()
 
@@ -22,7 +22,7 @@ class PostsFormsTests(TestCase):
         self.assertFalse(Follow.objects.filter(
             user=self.follower,
             author=self.author
-        ))
+        ).exists())
         self.client.get(reverse(
             'posts:profile_follow',
             args={self.author.username}
@@ -30,7 +30,7 @@ class PostsFormsTests(TestCase):
         self.assertTrue(Follow.objects.filter(
             user=self.follower,
             author=self.author
-        ))
+        ).exists())
 
     def test_unfollowing_possible(self):
         Follow.objects.create(
@@ -40,7 +40,7 @@ class PostsFormsTests(TestCase):
         self.assertTrue(Follow.objects.filter(
             user=self.follower,
             author=self.author
-        ))
+        ).exists())
         self.client.get(reverse(
             'posts:profile_unfollow',
             args={self.author.username}
@@ -48,7 +48,7 @@ class PostsFormsTests(TestCase):
         self.assertFalse(Follow.objects.filter(
             user=self.follower,
             author=self.author
-        ))
+        ).exists())
 
     def test_new_post_show_for_followers_only(self):
         non_follower_client = Client()

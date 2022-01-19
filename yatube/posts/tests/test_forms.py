@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from posts.models import Comment, Group, Post
+
+from ..models import Comment, Group, Post
 
 User = get_user_model()
 
@@ -202,12 +203,11 @@ class PostsImagesTest(TestCase):
         """Форма с картинкой создает пост в БД"""
         posts_count = Post.objects.count()
         uploaded = SimpleUploadedFile(
-            name='small.gif',
+            name='small2.gif',
             content=self.small_gif,
             content_type='image/gif'
         )
         form_data = {
-            'title': 'Тестовый заголовок',
             'text': 'Тестовый текст',
             'image': uploaded,
         }
@@ -219,7 +219,12 @@ class PostsImagesTest(TestCase):
             response,
             reverse('posts:profile', args=(self.user.username,))
         )
+        new_post = Post.objects.select_related('group')[0]
         self.assertEqual(Post.objects.count(), posts_count + 1)
+        self.assertEqual(new_post.text, form_data['text'])
+        self.assertEqual(
+            new_post.image.name,
+            'posts/' + form_data['image'].name)
 
     def test_post_with_image(self):
         """При выводе поста с картинкой изображение
